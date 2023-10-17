@@ -26,6 +26,8 @@ let transaction_id = 455334
 
 
 
+(* TODO: Handle Errors*)
+(* TODO: Add support for retries*)
 let connect_to_tracker_udp server_addr = 
   let open Lwt in  
 
@@ -56,6 +58,8 @@ let connect_to_tracker_udp server_addr =
 
 
 (* refer to http://www.bittorrent.org/beps/bep_0015.html for more information as to how to interact with udp trackers*)
+(* TODO: Handle Errors*)
+(* TODO: Add support for retries*)
 let get_peers_udp server_addr connect_id info_hash  = 
   let open Lwt_unix in
 
@@ -66,7 +70,10 @@ let get_peers_udp server_addr connect_id info_hash  =
   let ip = Ipaddr.V4.to_string @@ Ipaddr.V4.of_octets_exn ~off (to_string byte_array) in
   let port = Stdlib.Bytes.(get_uint16_be (byte_array) off+2) in
   let peer = Peer.make ip port in
-  helper byte_array (peer :: acc) (off + 6) in
+  if Ipaddr.V4.is_global (Ipaddr.V4.of_string_exn ip) then
+  helper byte_array (peer :: acc) (off + 6) 
+  else
+  helper byte_array acc (off + 6) in
 
   let announce_request_data () = 
   let open Stdlib.Bytes in  
@@ -78,7 +85,6 @@ let get_peers_udp server_addr connect_id info_hash  =
   let () = set_int32_be res_buffer 12 (Option.value_exn (Int32.of_int transaction_id)) in
   (*info hash*)
   let () = blit info_hash 0 res_buffer 16 (length info_hash) in
-  (* peer id. TODO: make it such that this is unique*)
   let uuid = Bytes.of_string (Time_float.to_string_utc @@ Time_float.now ()) in
   let () = blit uuid 0 res_buffer 36 (length uuid) in
   (*downloaded*)

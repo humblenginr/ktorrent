@@ -4,13 +4,13 @@ The .torrent file, also known as the metainfo file, is a bencoded dictionary wit
 ```json
 {
     "info" : {
-        "piece_length" :  _number of bytes in each piece_,
-        "pieces" : _string concatenation of the hashes (20 byte SHA1 hash) of all pieces_,
-        "name" : _name of the file being downloaded (this is what will be shown as the name of the file after downloading)_,
-        "length" : _length of the file in bytes_,
+        "piece_length" :  "_number of bytes in each piece_",
+        "pieces" : ""_string concatenation of the hashes (20 byte SHA1 hash) of all pieces_",
+        "name" : "_name of the file being downloaded (this is what will be shown as the name of the file after downloading)_",
+        "length" : "_length of the file in bytes_",
 
     },
-    "announce" : _The tracker URL_
+    "announce" : "_The tracker URL_"
 }
 ```
 (> NOTE: The above example is for a single file torrent)
@@ -53,5 +53,5 @@ UDP is a binary based protocol, therefore all the numbers being sent over the ne
 Unlike the TCP protocol, UDP is unreliable (packets may arrive out of order, appear to have duplicates or disappear without warning). So we have to set
 up a retry without timeout flow for UDP connections.
 
-We now have the response buffer that the tracker sent us when we sent the announce request.
-We have to parse that response to get the list of peers
+
+
