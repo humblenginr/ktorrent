@@ -1,4 +1,5 @@
 (executable
  (public_name xtorrent)
  (name main)
- (libraries xtorrent))
+ (libraries xtorrent bencode async lwt lwt.unix sha)
+ (preprocess (pps lwt_ppx)))

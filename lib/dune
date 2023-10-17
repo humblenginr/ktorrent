@@ -1,4 +1,5 @@
 (library
  (name xtorrent)
- (libraries bencode)
+ (libraries bencode async_udp ppx_let)
+ (preprocess (pps ppx_let))
  )
