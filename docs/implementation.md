@@ -53,6 +53,5 @@ UDP is a binary based protocol, therefore all the numbers being sent over the ne
 Unlike the TCP protocol, UDP is unreliable (packets may arrive out of order, appear to have duplicates or disappear without warning). So we have to set
 up a retry without timeout flow for UDP connections.
 
-We have to first send an UDP request to the server.
-
-How do we send a UDP request in ocaml.
+We now have the response buffer that the tracker sent us when we sent the announce request.
+We have to parse that response to get the list of peers
