@@ -1,5 +1,5 @@
 (library
  (name xtorrent)
- (libraries bencode async_udp ppx_let)
- (preprocess (pps ppx_let))
+ (libraries core core_unix bencode sha lwt lwt.unix ipaddr uuidm )
+ (preprocess (pps lwt_ppx))
  )
