@@ -52,17 +52,17 @@ let connect_to_server_udp t :[`Connected] t Lwt.t  =
   t.connect_id <- connect_id;
   return t
 
-let rec peers_from_response byte_array acc off = 
+let rec peers_from_response id byte_array acc off = 
   let open Stdlib.Bytes in
   if ((length byte_array) - off) < 6 then acc
   else 
   let ip = Ipaddr.V4.to_string @@ Ipaddr.V4.of_octets_exn ~off (to_string byte_array) in
   let port = Stdlib.Bytes.(get_uint16_be (byte_array) off+2) in
-  let peer = Peer.make ip port in
+  let peer = Peer.make ip port id in
   if Ipaddr.V4.is_global (Ipaddr.V4.of_string_exn ip) then
-  peers_from_response byte_array (peer :: acc) (off + 6) 
+  peers_from_response id byte_array (peer :: acc) (off + 6) 
   else
-  peers_from_response byte_array acc (off + 6) 
+  peers_from_response id byte_array acc (off + 6) 
 
 let announce_request_data info_hash connect_id uuid tr_id = 
   let open Stdlib.Bytes in  
@@ -73,9 +73,10 @@ let announce_request_data info_hash connect_id uuid tr_id =
   (*transaction id *)
   let () = set_int32_be res_buffer 12 (tr_id) in
   (*info hash*)
+  print_endline ("info hash length: " ^ Int.to_string @@ length info_hash);
   let () = blit info_hash 0 res_buffer 16 (length info_hash) in
   (**)
-  let () = blit uuid 0 res_buffer 36 (length uuid) in
+  let () = blit uuid 0 res_buffer 36 (20) in
   (*downloaded*)
   let () = set_int64_be res_buffer 56 (Int64.of_int 0) in
   (*left*)
@@ -107,5 +108,5 @@ let get_peers_udp (t : [`Connected] t) info_hash  =
   let* _,_ = recvfrom sck announce_response 0 1024 [] in
   print_endline "received response from the server"; 
   (* let transaction_id = List.rev @@ peers_from_response announce_response [] 20 in *)
-  let peers = List.rev @@ peers_from_response announce_response [] 20 in
+  let peers = List.rev @@ peers_from_response (Bytes.to_string peer_id) announce_response [] 20 in
   Lwt.return peers

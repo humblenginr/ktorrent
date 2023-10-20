@@ -18,5 +18,5 @@ val make: int32 -> Unix.sockaddr -> [`Unconnected] t
 val connect_to_server_udp: [`Unconnected] t -> [`Connected] t Lwt.t
 
 (* connect_to_tracker_udp sends an announce request to the udp tracker and gets the list of peers returned by the server *)
-val get_peers_udp: [`Connected] t -> bytes -> (Peer.t list) Lwt.t
+val get_peers_udp: [`Connected] t -> bytes -> ([`Unconnected] Peer.t list) Lwt.t
 

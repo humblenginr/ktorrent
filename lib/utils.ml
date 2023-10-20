@@ -10,10 +10,6 @@ let create_udp_socket () =
 let create_tcp_socket () = 
   let open Lwt_unix in
   Lwt.return @@ socket PF_INET SOCK_STREAM 0 
-  
-
-
-
 
 (* Gets the ip address of the url specified*)
 let get_inet_addr host port =
