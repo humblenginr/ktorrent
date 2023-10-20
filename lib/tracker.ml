@@ -7,19 +7,19 @@ let magic_number = "0x41727101980"
 let connect_action = Option.value_exn @@ Int32.of_int 0
 let announce_action = Option.value_exn @@ Int32.of_int 1
 
-type t= {
+type tracker = {
   transaction_id: int32;
   addr: Core_unix.sockaddr;
   mutable connect_id: int64;
 }
+
+type +'a t = tracker constraint 'a = [< `Connected | `Unconnected]
 
 let make trans_id addr = ({
   transaction_id = trans_id;
   addr = addr;
   connect_id = Int64.zero;
 })
-
-let is_connected tracker = not @@ Int64.equal tracker.connect_id Int64.zero
 
 let connect_request_data tr_id  = 
 let res_buffer = Bytes.create 16 in
@@ -34,10 +34,10 @@ res_buffer
 
 (* TODO: Handle Errors*)
 (* TODO: Add support for retries*)
-let connect_to_tracker_udp t = 
+let connect_to_server_udp t :[`Connected] t Lwt.t  = 
   let open Lwt in  
 
-  let* sck = Utils.create_socket () in 
+  let* sck = Utils.create_udp_socket () in 
   (* let server_address = Core_unix.ADDR_INET (Core_unix.Inet_addr.localhost, 4445) in  *)
   print_endline ("Server address: " ^ Sexp.to_string (Core_unix.sexp_of_sockaddr t.addr));
   let conn_req = connect_request_data t.transaction_id in
@@ -50,7 +50,7 @@ let connect_to_tracker_udp t =
   let connect_id = Stdlib.Bytes.get_int64_be connect_response 8 in
   print_endline ("Received message from server: " ^ (Int64.to_string connect_id));
   t.connect_id <- connect_id;
-  return ()
+  return t
 
 let rec peers_from_response byte_array acc off = 
   let open Stdlib.Bytes in
@@ -93,10 +93,10 @@ let announce_request_data info_hash connect_id uuid tr_id =
 (* refer to http://www.bittorrent.org/beps/bep_0015.html for more information as to how to interact with udp trackers*)
 (* TODO: Handle Errors*)
 (* TODO: Add support for retries*)
-let get_peers_udp (t:t) info_hash  = 
+let get_peers_udp (t : [`Connected] t) info_hash  = 
   let open Lwt_unix in
 
-  let* sck = Utils.create_socket () in 
+  let* sck = Utils.create_udp_socket () in 
   (* peer_id is a unique id for our client that will be stored in the  *)
   let peer_id = Bytes.of_string (Time_float.to_string_utc @@ Time_float.now ()) in
   let announce_req = announce_request_data info_hash t.connect_id peer_id t.transaction_id in

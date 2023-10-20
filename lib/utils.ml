@@ -3,9 +3,14 @@ open Core
 let (let*) = Lwt.bind
 
 (* Creates a UDP socket*)
-let create_socket () = 
+let create_udp_socket () = 
   let open Lwt_unix in
   Lwt.return @@ socket PF_INET SOCK_DGRAM 0
+
+let create_tcp_socket () = 
+  let open Lwt_unix in
+  Lwt.return @@ socket PF_INET SOCK_STREAM 0 
+  
 
 
 
