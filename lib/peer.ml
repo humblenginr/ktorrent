@@ -4,7 +4,7 @@ let (let*) = Lwt.bind
 (* Every connection the client makes with the peer has some state that has to be maintained *)
 
 type peer = {
-  ip: string;
+  ip: Ipaddr.V4.t;
   port: int; 
 
   (* am_choking: int; *)
@@ -33,7 +33,7 @@ let make ip port id : [`Unconnected] t = {
 
 let sexp_of_t t =
 let open Core in
-Sexp.List ([Sexp.Atom t.ip; Sexp.Atom (Int.to_string t.port)])
+Sexp.List ([Sexp.Atom ( Ipaddr.V4.to_string t.ip); Sexp.Atom (Int.to_string t.port)])
 
 let ip t = t.ip
 let port t = t.port
@@ -42,7 +42,7 @@ let connect (p : [`Unconnected] t ) : [`Connected] t Lwt.t =
   let open Lwt_unix in
   let* sck = Utils.create_tcp_socket () in
   p.fd <- Some sck;
-  let addr = ADDR_INET (Unix.inet_addr_of_string p.ip, p.port) in
+  let addr = ADDR_INET (Unix.inet_addr_of_string ( Ipaddr.V4.to_string p.ip), p.port) in
   let* _ = connect sck addr in
   Lwt.return @@ p
 
@@ -59,7 +59,7 @@ let () = blit protocol 0 res_buffer 1 (length protocol) in
 let () = set_int32_be res_buffer 20 (Int32.of_int 0) in
 let () = set_int32_be res_buffer 24 (Int32.of_int 0) in
 (*info_hash *)
-let () = blit info_hash 0 res_buffer 28 (length info_hash) in
+let () = blit info_hash 0 res_buffer 28 20 in
 (*peer_id *)
 let peer_id = of_string p.id in
 (* peer_id length exceeds 20 bytes, therefore we are ignoring the extra bytes*)

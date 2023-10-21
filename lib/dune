@@ -1,5 +1,5 @@
 (library
  (name xtorrent)
- (libraries core core_unix bencode sha lwt lwt.unix ipaddr uuidm )
+ (libraries core core_unix bencode sha lwt lwt.unix ipaddr uuidm stdint )
  (preprocess (pps lwt_ppx))
  )

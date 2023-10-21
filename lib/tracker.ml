@@ -52,17 +52,25 @@ let connect_to_server_udp t :[`Connected] t Lwt.t  =
   t.connect_id <- connect_id;
   return t
 
-let rec peers_from_response id byte_array acc off = 
+let peers_from_response id peers_bin= 
+  let rec helper id peers_bin acc off  = 
   let open Stdlib.Bytes in
-  if ((length byte_array) - off) < 6 then acc
+  let open Stdint in
+  if ((length peers_bin) - off) < 6 then acc
   else 
-  let ip = Ipaddr.V4.to_string @@ Ipaddr.V4.of_octets_exn ~off (to_string byte_array) in
-  let port = Stdlib.Bytes.(get_uint16_be (byte_array) off+2) in
+  (* let ip = Ipaddr.V4.to_string @@ Ipaddr.V4.of_octets_exn ~off (to_string byte_array) in *)
+  let ip_bin = sub peers_bin (off) 4 in
+  let ip_array =
+      Array.init 4 ~f:(fun j ->
+      Uint8.of_bytes_big_endian ip_bin j |> Uint8.to_int)
+  in
+  let ip =
+    Ipaddr.V4.make ip_array.(0) ip_array.(1) ip_array.(2) ip_array.(3) in
+  let port =  Uint16.of_bytes_big_endian peers_bin (off + 4) |> Uint16.to_int in
   let peer = Peer.make ip port id in
-  if Ipaddr.V4.is_global (Ipaddr.V4.of_string_exn ip) then
-  peers_from_response id byte_array (peer :: acc) (off + 6) 
-  else
-  peers_from_response id byte_array acc (off + 6) 
+  helper id peers_bin (peer :: acc) (off + 6) in
+
+  helper id peers_bin [] 0
 
 let announce_request_data info_hash connect_id uuid tr_id = 
   let open Stdlib.Bytes in  
@@ -96,17 +104,22 @@ let announce_request_data info_hash connect_id uuid tr_id =
 (* TODO: Add support for retries*)
 let get_peers_udp (t : [`Connected] t) info_hash  = 
   let open Lwt_unix in
+  let open Stdlib.Bytes in
 
   let* sck = Utils.create_udp_socket () in 
   (* peer_id is a unique id for our client that will be stored in the  *)
-  let peer_id = Bytes.of_string (Time_float.to_string_utc @@ Time_float.now ()) in
+  let peer_id = of_string (Time_float.to_string_utc @@ Time_float.now ()) in
+  let client_info = of_string "-AT0001-" in
+  blit client_info 0 peer_id 0 (Bytes.length client_info);
   let announce_req = announce_request_data info_hash t.connect_id peer_id t.transaction_id in
   let* _ = (sendto sck announce_req 0 (Bytes.length announce_req) [] t.addr) in
   print_endline ("Sent announce request to the server");
 
-  let announce_response = Bytes.create 1024 in
+  let announce_response = create 1024 in
+  fill announce_response 0 1024 '\n';
   let* _,_ = recvfrom sck announce_response 0 1024 [] in
+  let announce_response = trim announce_response in
   print_endline "received response from the server"; 
-  (* let transaction_id = List.rev @@ peers_from_response announce_response [] 20 in *)
-  let peers = List.rev @@ peers_from_response (Bytes.to_string peer_id) announce_response [] 20 in
+  print_endline @@ "Length of the peers_binary :" ^ (Int.to_string @@ length announce_response - 20); 
+  let peers = List.rev @@ peers_from_response (Bytes.to_string peer_id) (sub announce_response 20 (length announce_response - 20)) in
   Lwt.return peers
