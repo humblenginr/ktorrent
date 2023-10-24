@@ -67,51 +67,54 @@ let peers_from_response id peers_bin=
   let ip =
     Ipaddr.V4.make ip_array.(0) ip_array.(1) ip_array.(2) ip_array.(3) in
   let port =  Uint16.of_bytes_big_endian peers_bin (off + 4) |> Uint16.to_int in
-  let peer = Peer.make ip port id in
+  let peer = Peer.make ip port in
   helper id peers_bin (peer :: acc) (off + 6) in
 
   helper id peers_bin [] 0
 
-let announce_request_data info_hash connect_id uuid tr_id = 
+let announce_request_data t peer_id tr = 
   let open Stdlib.Bytes in  
   let res_buffer = create 98 in
-  let () = set_int64_be res_buffer 0 (connect_id) in
+  let info_hash = of_string @@ Torrent.get_info_hash tr in
+  let left_data = Torrent.size tr in
+  (*connection_id*)
+  let () = set_int64_be res_buffer 0 (t.connect_id) in
   (*action number = 1 -> announce request*)
   let () = set_int32_be res_buffer 8 ( announce_action) in
   (*transaction id *)
-  let () = set_int32_be res_buffer 12 (tr_id) in
+  let () = set_int32_be res_buffer 12 (t.transaction_id) in
   (*info hash*)
   print_endline ("info hash length: " ^ Int.to_string @@ length info_hash);
   let () = blit info_hash 0 res_buffer 16 (length info_hash) in
-  (**)
-  let () = blit uuid 0 res_buffer 36 (20) in
+  (*peer_id*)
+  let () = blit peer_id 0 res_buffer 36 (20) in
   (*downloaded*)
   let () = set_int64_be res_buffer 56 (Int64.of_int 0) in
   (*left*)
-  let () = set_int64_be res_buffer 64 (Int64.of_int 0 ) in
+  let () = set_int64_be res_buffer 64 (Int64.of_int left_data ) in
   (*uploaded*)
   let () = set_int64_be res_buffer 72 (Int64.of_int 0 ) in
   (*event*)
   let () = set_int32_be res_buffer 80 (Option.value_exn (Int32.of_int 0)) in
   (*ip address*)
   let () = set_int32_be res_buffer 84 (Option.value_exn (Int32.of_int 0)) in
+  (*key*)
+  let () = set_int32_be res_buffer 88 (Option.value_exn (Int32.of_int 88)) in
   (*num want*)
   let () = set_int32_be res_buffer 92 (Option.value_exn (Int32.of_int (-1))) in
+  (*port*)
+  let () = set_uint16_be res_buffer 96 (7891) in
   res_buffer
 
 (* refer to http://www.bittorrent.org/beps/bep_0015.html for more information as to how to interact with udp trackers*)
 (* TODO: Handle Errors*)
 (* TODO: Add support for retries*)
-let get_peers_udp (t : [`Connected] t) info_hash  = 
+let get_peers_udp (t : [`Connected] t) (tr: Torrent.t) (peer_id)  = 
   let open Lwt_unix in
   let open Stdlib.Bytes in
 
   let* sck = Utils.create_udp_socket () in 
-  (* peer_id is a unique id for our client that will be stored in the  *)
-  let peer_id = of_string (Time_float.to_string_utc @@ Time_float.now ()) in
-  let client_info = of_string "-AT0001-" in
-  blit client_info 0 peer_id 0 (Bytes.length client_info);
-  let announce_req = announce_request_data info_hash t.connect_id peer_id t.transaction_id in
+  let announce_req = announce_request_data t peer_id tr  in
   let* _ = (sendto sck announce_req 0 (Bytes.length announce_req) [] t.addr) in
   print_endline ("Sent announce request to the server");
 

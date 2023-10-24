@@ -11,3 +11,6 @@ val get_announce_url: t -> string
 
 (* Get the SHA1 hash string of `info`. Ideally, this will not be a part of this module. Have to be refactored later. *)
 val get_info_hash: t -> string
+
+(* Get the size of the torrent file to be downloaded*)
+val size: t -> int

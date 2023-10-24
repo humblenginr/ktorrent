@@ -19,3 +19,9 @@ let get_inet_addr host port =
   Lwt.return @@ (List.hd_exn addresses).ai_addr
 
 
+(* peer_id is a unique id for our client. This the id we use to identify ourselves with the tracker *)
+let gen_peer_id () = 
+  let peer_id = Stdlib.Bytes.of_string (Time_float.to_string_utc @@ Time_float.now ()) in
+  let client_info = Stdlib.Bytes.of_string "-AT0003-" in
+  Stdlib.Bytes.blit client_info 0 peer_id 0 (Bytes.length client_info); peer_id
+

@@ -13,12 +13,11 @@ type peer = {
   (* peer_interested: int; *)
 
   mutable fd: Lwt_unix.file_descr option;
-  id: string;
 }
 
 type 'a t = peer constraint 'a = [< `Connected | `Unconnected]
 
-let make ip port id : [`Unconnected] t = {
+let make ip port : [`Unconnected] t = {
   ip
   ;port
 
@@ -28,7 +27,6 @@ let make ip port id : [`Unconnected] t = {
   (* ;peer_interested = 0 *)
 
   ;fd= None
-  ;id
 }
 
 let sexp_of_t t =
@@ -47,7 +45,7 @@ let connect (p : [`Unconnected] t ) : [`Connected] t Lwt.t =
   Lwt.return @@ p
 
 
-let handshake_msg_builder p info_hash = 
+let handshake_msg_builder peer_id info_hash = 
 let res_buffer = Bytes.create 68 in
 let open Stdlib.Bytes in 
 (* pstrlen *)
@@ -60,24 +58,33 @@ let () = set_int32_be res_buffer 20 (Int32.of_int 0) in
 let () = set_int32_be res_buffer 24 (Int32.of_int 0) in
 (*info_hash *)
 let () = blit info_hash 0 res_buffer 28 20 in
-(*peer_id *)
-let peer_id = of_string p.id in
 (* peer_id length exceeds 20 bytes, therefore we are ignoring the extra bytes*)
 let () = blit peer_id 0 res_buffer 48 20 in
 res_buffer
 
-let handshake (p: [`Connected] t) info_hash = 
+let handshake (p: [`Connected] t) info_hash peer_id = 
   let open Lwt_unix in
-  let handshake_data = handshake_msg_builder p info_hash in
+  let open Stdlib.Bytes in 
+  let handshake_data = handshake_msg_builder peer_id info_hash in
   let* _ = (
     match p.fd with 
     | None -> assert false
     | Some f -> send f handshake_data 0 (Stdlib.Bytes.length handshake_data) []
     ) in 
-  let resp_buffer = Stdlib.Bytes.create 80 in
-  let* _ = ( match p.fd with 
-    | None -> assert false
-    | Some f -> recv f resp_buffer 0 (80) []
-    ) in 
-  print_endline (Bytes.to_string resp_buffer);Lwt.return ()
+
+  (* 
+     I am able to successfully establish a connection with the client, but the data I get back from the handshake is not what I expect.  
+     There might be two problems. 1 -> I might be incorrectly reading the data from the socket, or the client itself might not be sending 
+     proper response.
+   *)
+
+  let resp_buffer = make 1024 '\n' in
+  (* let* _ = ( match p.fd with  *)
+  (*   | None -> assert false *)
+  (*   | Some f -> recv f resp_buffer 0 (length resp_buffer) [MSG_PEEK] *)
+  (*   ) in  *)
+  let* _ = read (Core.Option.value_exn p.fd) resp_buffer 0 (length resp_buffer) in
+  let pid = get_uint8 resp_buffer 0 in
+  (* let pid =  sub resp_buffer 48 20 in *)
+  print_endline (Int.to_string pid);Lwt.return ()
 
