@@ -39,9 +39,10 @@ let port t = t.port
 let connect (p : [`Unconnected] t ) : [`Connected] t Lwt.t = 
   let open Lwt_unix in
   let* sck = Utils.create_tcp_socket () in
-  p.fd <- Some sck;
   let addr = ADDR_INET (Unix.inet_addr_of_string ( Ipaddr.V4.to_string p.ip), p.port) in
   let* _ = connect sck addr in
+  p.fd <- Some sck;
+  print_endline @@ "Connected to peer: " ^ Ipaddr.V4.to_string p.ip;
   Lwt.return @@ p
 
 
@@ -49,7 +50,7 @@ let handshake_msg_builder peer_id info_hash =
 let res_buffer = Bytes.create 68 in
 let open Stdlib.Bytes in 
 (* pstrlen *)
-let () = set_uint8 res_buffer 0 (19) in
+let () = set_int8 res_buffer 0 (19) in
 (*pstr - protocol identifier*)
 let protocol = of_string "BitTorrent protocol" in
 let () = blit protocol 0 res_buffer 1 (length protocol) in
@@ -65,12 +66,14 @@ res_buffer
 let handshake (p: [`Connected] t) info_hash peer_id = 
   let open Lwt_unix in
   let open Stdlib.Bytes in 
+  let buffer = make 80 (char_of_int 0) in
   let handshake_data = handshake_msg_builder peer_id info_hash in
-  let* _ = (
-    match p.fd with 
-    | None -> assert false
-    | Some f -> send f handshake_data 0 (Stdlib.Bytes.length handshake_data) []
-    ) in 
+  let fd = Core.Option.value_exn p.fd in
+  let* _ = write fd handshake_data 0 (length handshake_data) in
+  print_endline "waiting for handshake response";
+  let* _ = read fd buffer 0 (length buffer) in
+  (* let p = get_uint8 buffer 0 in *)
+  print_endline @@ "Response from the server: " ^ (to_string buffer);
 
   (* 
      I am able to successfully establish a connection with the client, but the data I get back from the handshake is not what I expect.  
@@ -78,13 +81,5 @@ let handshake (p: [`Connected] t) info_hash peer_id =
      proper response.
    *)
 
-  let resp_buffer = make 1024 '\n' in
-  (* let* _ = ( match p.fd with  *)
-  (*   | None -> assert false *)
-  (*   | Some f -> recv f resp_buffer 0 (length resp_buffer) [MSG_PEEK] *)
-  (*   ) in  *)
-  let* _ = read (Core.Option.value_exn p.fd) resp_buffer 0 (length resp_buffer) in
-  let pid = get_uint8 resp_buffer 0 in
-  (* let pid =  sub resp_buffer 48 20 in *)
-  print_endline (Int.to_string pid);Lwt.return ()
+  Lwt.return ()
 

@@ -46,7 +46,7 @@ let connect_to_server_udp t :[`Connected] t Lwt.t  =
   print_endline ("Sent connect request to the server");
 
   let connect_response = Bytes.create 1024 in
-  let* _,_ = recvfrom sck connect_response 0 1024 [] in
+  let* _ = read sck connect_response 0 1024 in
   let connect_id = Stdlib.Bytes.get_int64_be connect_response 8 in
   print_endline ("Received message from server: " ^ (Int64.to_string connect_id));
   t.connect_id <- connect_id;
@@ -120,9 +120,10 @@ let get_peers_udp (t : [`Connected] t) (tr: Torrent.t) (peer_id)  =
 
   let announce_response = create 1024 in
   fill announce_response 0 1024 '\n';
-  let* _,_ = recvfrom sck announce_response 0 1024 [] in
+  let* _ = read sck announce_response 0 1024 in
   let announce_response = trim announce_response in
   print_endline "received response from the server"; 
   print_endline @@ "Length of the peers_binary :" ^ (Int.to_string @@ length announce_response - 20); 
+  print_endline @@ "Transaction id:" ^ (Int32.to_string @@ get_int32_be announce_response 4); 
   let peers = List.rev @@ peers_from_response (Bytes.to_string peer_id) (sub announce_response 20 (length announce_response - 20)) in
   Lwt.return peers
