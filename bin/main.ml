@@ -3,11 +3,8 @@ open Xtorrent
 
 let (let*) = Lwt.bind
 
-let find_connectable_peer peer_id info_hash = List.map ~f:(
-    fun peer -> 
-      let* connected_peer = Peer.connect peer in
-      Peer.handshake connected_peer peer_id info_hash 
-)
+let connect_with_timeout peer = Utils.compute_promise_with_timeout (Peer.connect peer) 3. 
+let attempt_to_connect peers = List.map ~f:(connect_with_timeout) peers |> Lwt.all
 
 let transaction_id = Option.value_exn @@ Int32.of_int 78834
 let run () =
@@ -25,12 +22,13 @@ let run () =
 
   let info_hash = Bytes.of_string @@ Torrent.get_info_hash tr in
   (* print_endline "Finding connnectable peer...";  *)
-  let* _ = Lwt.all @@ find_connectable_peer peer_id info_hash peers in
-
-  (* let peer = Peer.make ( Ipaddr.V4.of_string_exn @@ "27.7.123.171") 10066 in *)
-  (* let peer = Peer.make ( Ipaddr.V4.localhost) 5678 in *)
-  (* let* peer = Peer.connect peer in *)
-  (* let* _ = Peer.handshake peer peer_id info_hash in *)
+  let* connection_result = attempt_to_connect peers in
+  let connected_peers = List.filter_map connection_result ~f:(fun connection -> match connection with 
+    | `Done x -> x
+    | `Timeout -> None
+  ) in
+  let () = List.iter connected_peers ~f:(fun p -> print_endline ( Sexp.to_string @@ Peer.sexp_of_t p) ) in
+  let* _ = Lwt.all @@ List.map connected_peers ~f:(fun p -> Peer.handshake p info_hash peer_id) in
 
   Lwt.return ()
 

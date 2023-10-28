@@ -36,42 +36,53 @@ Sexp.List ([Sexp.Atom ( Ipaddr.V4.to_string t.ip); Sexp.Atom (Int.to_string t.po
 let ip t = t.ip
 let port t = t.port
 
-let connect (p : [`Unconnected] t ) : [`Connected] t Lwt.t = 
-  let open Lwt_unix in
+
+
+(* When Lwt_unix.connect raises an exception, the promise returned by the `connect` function will be rejected with the exception it raised *)
+let connect (p : [`Unconnected] t ) : ([`Connected] t) option Lwt.t = 
   let* sck = Utils.create_tcp_socket () in
-  let addr = ADDR_INET (Unix.inet_addr_of_string ( Ipaddr.V4.to_string p.ip), p.port) in
-  let* _ = connect sck addr in
+  let addr = Lwt_unix.ADDR_INET (Unix.inet_addr_of_string ( Ipaddr.V4.to_string p.ip), p.port) in
+  try%lwt
+  (let* _ = Lwt_unix.connect sck addr in
   p.fd <- Some sck;
   print_endline @@ "Connected to peer: " ^ Ipaddr.V4.to_string p.ip;
-  Lwt.return @@ p
-
+  Lwt.return @@ Some p) with _ -> Lwt.return None
+  
+  
 
 let handshake_msg_builder peer_id info_hash = 
 let res_buffer = Bytes.create 68 in
 let open Stdlib.Bytes in 
 (* pstrlen *)
-let () = set_int8 res_buffer 0 (19) in
+(* should this be uint or int?*)
+let () = Stdint.Uint8.to_bytes_big_endian (Stdint.Uint8.of_int 19) res_buffer 0 in
 (*pstr - protocol identifier*)
 let protocol = of_string "BitTorrent protocol" in
 let () = blit protocol 0 res_buffer 1 (length protocol) in
 (*reserved bytes *)
-let () = set_int32_be res_buffer 20 (Int32.of_int 0) in
-let () = set_int32_be res_buffer 24 (Int32.of_int 0) in
+let reserved_bytes = make 8 (char_of_int 0) in
+let () = blit reserved_bytes 0 res_buffer 20 (length reserved_bytes) in
 (*info_hash *)
 let () = blit info_hash 0 res_buffer 28 20 in
 (* peer_id length exceeds 20 bytes, therefore we are ignoring the extra bytes*)
 let () = blit peer_id 0 res_buffer 48 20 in
 res_buffer
 
+(* 
+   1. info_hash could be wrong
+   2. 
+*)
+
 let handshake (p: [`Connected] t) info_hash peer_id = 
   let open Lwt_unix in
   let open Stdlib.Bytes in 
-  let buffer = make 80 (char_of_int 0) in
+  let buffer = make 80 ' ' in
   let handshake_data = handshake_msg_builder peer_id info_hash in
   let fd = Core.Option.value_exn p.fd in
   let* _ = write fd handshake_data 0 (length handshake_data) in
   print_endline "waiting for handshake response";
   let* _ = read fd buffer 0 (length buffer) in
+  let buffer = trim buffer in
   (* let p = get_uint8 buffer 0 in *)
   print_endline @@ "Response from the server: " ^ (to_string buffer);
 

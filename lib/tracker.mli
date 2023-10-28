@@ -4,11 +4,16 @@
    UDP related will go into a submodule in the future (similarly TCP as well).
  *)
 
-(* Polymorphic variants are being used to improve the API surface. Although it is possible for the user to create a `Connected or `Unconnected type, 
-   there is no constructor functions that gives `t` without the appropriate type paramater. So, this sort of enforces correct types being used as parameters.
+(* 
+  Although it is possible for the user to create a `Connected or `Unconnected type, 
+   there is no constructor functions that gives `t` without the appropriate type paramater. So, this sort of enforces correct types being used as the parameters.
  *)
 
-(* The type of 'a is any type that has _utmost_ `Connected and `Unconnected  *)
+(*
+  [< `Connected | `Unconnected] means it matches all the types that have _utmost_ `Connected and `Unconnected polymorphic variants
+ *)
+
+
 type +'a t constraint 'a = [< `Connected | `Unconnected]
 
 (* [`Unconnected] in the type definition means that the type parameter of the type `t` should be an instance of `Unconnected *)

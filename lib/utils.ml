@@ -23,5 +23,11 @@ let get_inet_addr host port =
 let gen_peer_id () = 
   let peer_id = Stdlib.Bytes.of_string (Time_float.to_string_utc @@ Time_float.now ()) in
   let client_info = Stdlib.Bytes.of_string "-AT0003-" in
+
   Stdlib.Bytes.blit client_info 0 peer_id 0 (Bytes.length client_info); peer_id
+
+let compute_promise_with_timeout f timeout =  
+  let compute_pr = Lwt.map (fun peer -> `Done peer) (f) in
+  let timer = Lwt.map (fun () -> `Timeout) (Lwt_unix.sleep timeout) in
+  Lwt.pick [compute_pr; timer]
 
