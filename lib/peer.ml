@@ -1,6 +1,8 @@
 
 let (let*) = Lwt.bind
 
+let protocol_string = "BitTorrent protocol"
+
 (* Every connection the client makes with the peer has some state that has to be maintained *)
 
 type peer = {
@@ -48,16 +50,14 @@ let connect (p : [`Unconnected] t ) : ([`Connected] t) option Lwt.t =
   print_endline @@ "Connected to peer: " ^ Ipaddr.V4.to_string p.ip;
   Lwt.return @@ Some p) with _ -> Lwt.return None
   
-  
 
 let handshake_msg_builder peer_id info_hash = 
 let res_buffer = Bytes.create 68 in
 let open Stdlib.Bytes in 
 (* pstrlen *)
-(* should this be uint or int?*)
 let () = Stdint.Uint8.to_bytes_big_endian (Stdint.Uint8.of_int 19) res_buffer 0 in
 (*pstr - protocol identifier*)
-let protocol = of_string "BitTorrent protocol" in
+let protocol = of_string protocol_string in
 let () = blit protocol 0 res_buffer 1 (length protocol) in
 (*reserved bytes *)
 let reserved_bytes = make 8 (char_of_int 0) in
@@ -68,10 +68,12 @@ let () = blit info_hash 0 res_buffer 28 20 in
 let () = blit peer_id 0 res_buffer 48 20 in
 res_buffer
 
-(* 
-   1. info_hash could be wrong
-   2. 
-*)
+let verify_handshake_response resp peer_id =
+  if Stdlib.Bytes.length resp <> 68 then false else
+  let pstrlen = Stdint.Uint8.to_int @@ Stdint.Uint8.of_bytes_big_endian resp 0 in
+  let pstr = Stdlib.Bytes.to_string @@ Stdlib.Bytes.sub resp 1 20 in 
+  let pid = Stdlib.Bytes.sub resp 48 20 in
+  pstrlen = 19 && String.equal pstr protocol_string && Stdlib.Bytes.equal peer_id pid
 
 let handshake (p: [`Connected] t) info_hash peer_id = 
   let open Lwt_unix in
@@ -85,12 +87,4 @@ let handshake (p: [`Connected] t) info_hash peer_id =
   let buffer = trim buffer in
   (* let p = get_uint8 buffer 0 in *)
   print_endline @@ "Response from the server: " ^ (to_string buffer);
-
-  (* 
-     I am able to successfully establish a connection with the client, but the data I get back from the handshake is not what I expect.  
-     There might be two problems. 1 -> I might be incorrectly reading the data from the socket, or the client itself might not be sending 
-     proper response.
-   *)
-
-  Lwt.return ()
-
+  Lwt.return (verify_handshake_response buffer peer_id)

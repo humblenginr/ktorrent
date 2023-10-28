@@ -1,4 +1,6 @@
 (executable
  (public_name xtorrent)
  (name main)
- (libraries xtorrent))
+ (libraries xtorrent)
+ (preprocess (pps lwt_ppx))
+ )
