@@ -50,6 +50,56 @@ let connect (p : [`Unconnected] t ) : ([`Connected] t) option Lwt.t =
   print_endline @@ "Connected to peer: " ^ Ipaddr.V4.to_string p.ip;
   Lwt.return @@ Some p) with _ -> Lwt.return None
   
+let build_keep_alive_message = 
+  let open Stdlib.Bytes in
+  make 4 '0'
+
+let build_choke_message = 
+  let open Stdlib.Bytes in
+  let buf = create 5 in
+  (*length*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 1) buf 0 in
+  (*id*)
+  let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 0) buf 4 in
+  buf
+
+let build_unchoke_message = 
+  let open Stdlib.Bytes in
+  let buf = create 5 in
+  (*length*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 1) buf 0 in
+  (*id*)
+  let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 1) buf 4 in
+  buf
+
+let build_interested_message = 
+  let open Stdlib.Bytes in
+  let buf = create 5 in
+  (*length*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 1) buf 0 in
+  (*id*)
+  let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 2) buf 4 in
+  buf
+
+let build_not_interested_message = 
+  let open Stdlib.Bytes in
+  let buf = create 5 in
+  (*length*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 1) buf 0 in
+  (*id*)
+  let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 3) buf 4 in
+  buf
+
+let build_have_message piece_index = 
+  let open Stdlib.Bytes in
+  let buf = create 9 in
+  (*length*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 5) buf 0 in
+  (*id*)
+  let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 4) buf 4 in
+  (*id*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int piece_index) buf 5 in
+  buf
 
 let handshake_msg_builder peer_id info_hash = 
 let res_buffer = Bytes.create 68 in

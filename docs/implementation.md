@@ -66,8 +66,8 @@ Once we get the list of peers, we can start downloading the _file_ from them. Ea
 We have to use the Peer Wire Protocol (TCP) to communicate with the peers and obtain file pieces from them. 
 
 The protocol works like this:
-1. First we have to establish a TCP connection with a peer
-2. Send a `handshake` message which is used to let the peer know what file pieces we are interested in (using the `info_hash`) and some metadata info. 
+1. First we have to establish a TCP connection with a peer [x]
+2. Send a `handshake` message which is used to let the peer know what file pieces we are interested in (using the `info_hash`) and some metadata info. [x]
 If the peer has the file pieces we need, it will send a similar response, else it will drop the connection.
 3. The peer will send the information about the pieces it has using `have` or `bitfield` messages.
 4. The peer might send the `choke` message. If not, then the next step is for us to send `interested` message, and we hope for the peer to send `unchoke` message. 
@@ -75,7 +75,6 @@ For each connection with the peer, we have to maintain a state like this: {am_ch
 5. Once we have `am_interested = 1` and `peer_choking = 0`, then we can start sending `request` messages to download the pieces of the file
 
 (refer to Peer Wire Protocol section in https://wiki.theory.org/BitTorrentSpecification#Tracker_HTTP.2FHTTPS_Protocol for implementation details and message descriptions)
-
 
 
 
