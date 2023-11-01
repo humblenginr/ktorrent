@@ -118,23 +118,20 @@ let () = blit info_hash 0 res_buffer 28 20 in
 let () = blit peer_id 0 res_buffer 48 20 in
 res_buffer
 
-let verify_handshake_response resp peer_id =
+let verify_handshake_response resp =
   if Stdlib.Bytes.length resp <> 68 then false else
   let pstrlen = Stdint.Uint8.to_int @@ Stdint.Uint8.of_bytes_big_endian resp 0 in
-  let pstr = Stdlib.Bytes.to_string @@ Stdlib.Bytes.sub resp 1 20 in 
-  let pid = Stdlib.Bytes.sub resp 48 20 in
-  pstrlen = 19 && String.equal pstr protocol_string && Stdlib.Bytes.equal peer_id pid
+  let pstr = Stdlib.Bytes.to_string @@ Stdlib.Bytes.sub resp 1 19 in 
+  (* let pid = Stdlib.Byotes.sub resp 48 20 in *)
+  Int.equal pstrlen 19 && String.equal pstr protocol_string
 
 let handshake (p: [`Connected] t) info_hash peer_id = 
   let open Lwt_unix in
   let open Stdlib.Bytes in 
-  let buffer = make 80 ' ' in
+  let buffer = make 68 ' ' in
   let handshake_data = handshake_msg_builder peer_id info_hash in
   let fd = Core.Option.value_exn p.fd in
   let* _ = write fd handshake_data 0 (length handshake_data) in
-  print_endline "waiting for handshake response";
   let* _ = read fd buffer 0 (length buffer) in
-  let buffer = trim buffer in
   (* let p = get_uint8 buffer 0 in *)
-  print_endline @@ "Response from the server: " ^ (to_string buffer);
-  Lwt.return (verify_handshake_response buffer peer_id)
+  Lwt.return (verify_handshake_response buffer)
