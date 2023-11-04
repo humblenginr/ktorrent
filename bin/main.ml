@@ -21,6 +21,8 @@ let run () =
   (* let* server_addr = Utils.get_inet_addr ("tracker.openbittorrent.com") 80 in  *)
   let* server_addr = Utils.get_inet_addr ("tracker.opentrackr.org") 1337 in 
 
+  print_endline @@ Torrent.pretty_print tr;
+
   let peer_id = Utils.gen_peer_id () in
   let tracker = Tracker.make (transaction_id) server_addr in
   let* tracker = Tracker.connect_to_server_udp tracker in
@@ -45,6 +47,7 @@ let run () =
       | (p, true)  -> Some p) res in
 
   let () = print_peer_list handshaked_peers in
+  (*Once we get the list of handshaked peers, we have to establish the *)
 
   Lwt.return ()
   let _ = Lwt_main.run (run ())

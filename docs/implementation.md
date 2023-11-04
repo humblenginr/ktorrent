@@ -77,6 +77,22 @@ For each connection with the peer, we have to maintain a state like this: {am_ch
 (refer to Peer Wire Protocol section in https://wiki.theory.org/BitTorrentSpecification#Tracker_HTTP.2FHTTPS_Protocol for implementation details and message descriptions)
 
 
+Now that we have completed the handshake, we have to start asking for torrent pieces. 
+By looking at the tracker file, it has the `piece_length` and a field called `pieces`
+`pieces` is the string concatenation of all 20 byte SHA1 hash values of the pieces. We have to use this to verify that the 
+piece this client has downloaded is valid. 
+We basically have a bunch of pieces we need to download. Let us first establish a client that can successfully download one single piece.
 
+We basically should have a stream listening on the file descriptor, and whenever some message is being sent, it has to be handled. 
+Once we establish handshake, I do not know exactly when we will receive this, but we will receive this bitfield message from the peer indicating
+what pieces i can request.
+Therefore, it is important to constantly keep listening on the fd to interpret the messages.
+
+once a piece has been downloaded from a peer and verified, a `have` message should be sent to the peer
+
+1.Download a piece from a client and verify it with the hash.
+First thing that I have to send after establishing handshake is that i am interested in a piece
+After we send the interested message, we basically have to wait for the peer to send an `unchoke` message.
+Once we are unchoked, we can send request messages requesting for a particular piece
 
 

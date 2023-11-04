@@ -9,8 +9,10 @@ type peer = {
   ip: Ipaddr.V4.t;
   port: int; 
 
+  (* The peer is choking us - the peer is not ready to send us any data*)
   (* am_choking: int; *)
   (* am_interested: int; *)
+  (* we are choking the peer - we are not ready to send any data to the peer *)
   (* peer_choking: int; *)
   (* peer_interested: int; *)
 
@@ -38,7 +40,13 @@ Sexp.List ([Sexp.Atom ( Ipaddr.V4.to_string t.ip); Sexp.Atom (Int.to_string t.po
 let ip t = t.ip
 let port t = t.port
 
-
+let listen_for_message p size = 
+  let open Lwt_unix in 
+  let open Stdlib.Bytes in
+  let buf = make 1024 '0' in
+  let fd = Core.Option.value_exn p.fd in
+  let* _ = read fd buf 0 size in
+  Lwt.return buf
 
 (* When Lwt_unix.connect raises an exception, the promise returned by the `connect` function will be rejected with the exception it raised *)
 let connect (p : [`Unconnected] t ) : ([`Connected] t) option Lwt.t = 
@@ -81,6 +89,16 @@ let build_interested_message =
   let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 2) buf 4 in
   buf
 
+(* we basically have to wait for the `unchoke` message, only when we are being choked by the peer *)
+let interested p = 
+  let open Lwt_unix in
+  let open Stdlib.Bytes in 
+  let buffer = build_interested_message in
+  let fd = Core.Option.value_exn p.fd in
+  let* _ = write fd buffer 0 (length buffer) in
+  Lwt.return ()
+
+
 let build_not_interested_message = 
   let open Stdlib.Bytes in
   let buf = create 5 in
@@ -97,8 +115,23 @@ let build_have_message piece_index =
   let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 5) buf 0 in
   (*id*)
   let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 4) buf 4 in
-  (*id*)
+  (*piece index*)
   let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int piece_index) buf 5 in
+  buf
+
+let build_request_message piece_index len offset  = 
+  let open Stdlib.Bytes in
+  let buf = create 17 in
+  (*length*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int 13) buf 0 in
+  (*id*)
+  let () = Stdint.Int8.to_bytes_big_endian (Stdint.Int8.of_int 6) buf 4 in
+  (*piece index*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int piece_index) buf 5 in
+  (*begin offset within the piece*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int offset) buf 9 in
+  (*requested lenght*)
+  let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int len) buf 9 in
   buf
 
 let handshake_msg_builder peer_id info_hash = 
