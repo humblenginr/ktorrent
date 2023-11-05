@@ -40,14 +40,6 @@ Sexp.List ([Sexp.Atom ( Ipaddr.V4.to_string t.ip); Sexp.Atom (Int.to_string t.po
 let ip t = t.ip
 let port t = t.port
 
-let listen_for_message p size = 
-  let open Lwt_unix in 
-  let open Stdlib.Bytes in
-  let buf = make 1024 '0' in
-  let fd = Core.Option.value_exn p.fd in
-  let* _ = read fd buf 0 size in
-  Lwt.return buf
-
 (* When Lwt_unix.connect raises an exception, the promise returned by the `connect` function will be rejected with the exception it raised *)
 let connect (p : [`Unconnected] t ) : ([`Connected] t) option Lwt.t = 
   let* sck = Utils.create_tcp_socket () in
@@ -133,6 +125,7 @@ let build_request_message piece_index len offset  =
   (*requested lenght*)
   let () = Stdint.Int32.to_bytes_big_endian (Stdint.Int32.of_int len) buf 9 in
   buf
+
 
 let handshake_msg_builder peer_id info_hash = 
 let res_buffer = Bytes.create 68 in

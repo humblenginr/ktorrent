@@ -91,7 +91,7 @@ Therefore, it is important to constantly keep listening on the fd to interpret t
 once a piece has been downloaded from a peer and verified, a `have` message should be sent to the peer
 
 1.Download a piece from a client and verify it with the hash.
-First thing that I have to send after establishing handshake is that i am interested in a piece
+First thing that I have to send after establishing handshake is that I am interested in a piece
 After we send the interested message, we basically have to wait for the peer to send an `unchoke` message.
 Once we are unchoked, we can send request messages requesting for a particular piece
 
