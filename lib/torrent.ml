@@ -14,6 +14,10 @@ let get_info_hash t =
 let info = Option.value_exn (Bencode.dict_get t "info") in 
 Sha1.string @@ Bencode.encode_to_string info |> Sha1.to_bin
 
+let get_piece_length t = 
+  let info = Option.value_exn (Bencode.dict_get t "info") in 
+   Option.value_exn @@ Bencode.dict_get info "piece length" |> Bencode.as_int |> Option.value_exn |> Int64.to_int_exn
+
 let size t = 
   let info = Option.value_exn (Bencode.dict_get t "info") in 
   match Bencode.dict_get info "files" with

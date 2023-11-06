@@ -96,3 +96,5 @@ After we send the interested message, we basically have to wait for the peer to 
 Once we are unchoked, we can send request messages requesting for a particular piece
 
 
+It can be noted that the bitfield message is sent immediately after the handshake sequence is completed. And if the client does not have any pieces, then it will
+not send the bitfield message

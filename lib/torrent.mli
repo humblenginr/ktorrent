@@ -21,3 +21,5 @@ val get_piece_hash: t -> int -> string
 val size: t -> int
 
 val pretty_print: t -> string
+
+val get_piece_length: t -> int
