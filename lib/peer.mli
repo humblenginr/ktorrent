@@ -13,7 +13,7 @@ val connect: [`Unconnected] t -> ([`Connected] t) Lwt.t
 val complete_handshake: [`Connected] t -> Torrent.t -> bytes -> unit Lwt.t
 
 (* waits for the bitfield message from the peer *)
-val receive_bitfield: [`Connected] t ->  bytes Lwt.t
+val receive_bitfield: [`Connected] t -> Torrent.t -> bytes Lwt.t
 (* send interested message to the peer, and wait for it to send `unchoked` message *)
 (* This should also update the state of the peer *)
 val interested: [`Connected] t -> unit Lwt.t
@@ -21,12 +21,12 @@ val interested: [`Connected] t -> unit Lwt.t
    request a piece from the peer 
    request peer piece_index length
 *)
-val request: [`Connected] t -> int -> int -> int -> unit Lwt.t
+(* val request: [`Connected] t -> int -> int -> int -> unit Lwt.t *)
 (* send request message to the peer, and wait for the piece to be downloaded *)
-val download_piece: [`Connected] t -> unit Lwt.t
+(* val download_piece: [`Connected] t -> unit Lwt.t *)
 (* can_receive checks the state of the connection and determines if we can request the peer for data.*)
 (* can_receive = true means we are unchoked and we are interested in the peers pieces *)
-val can_receive: [`Connected] t -> bool
+(* val can_receive: [`Connected] t -> bool *)
 
 (* 
    Think about this:

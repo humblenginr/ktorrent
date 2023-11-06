@@ -15,7 +15,7 @@ val get_announce_url: t -> string
 val get_info_hash: t -> string
 
 (* Get the SHA1 hash of the piece at a given index *)
-val get_piece_hash: t -> int -> string
+(* val get_piece_hash: t -> int -> string *)
 
 (* Get the size of the torrent file to be downloaded*)
 val size: t -> int

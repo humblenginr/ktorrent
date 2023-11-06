@@ -2,7 +2,7 @@
 
 type t
 
-val init_peers: t -> [`Unconnected] Peer.t list -> bytes -> bytes -> unit list Lwt.t  
+val init_peers: t -> [`Unconnected] Peer.t list -> Torrent.t -> bytes -> unit list Lwt.t  
 val new_client: unit -> t
 
 

@@ -24,10 +24,9 @@ let run () =
   let* peers = Tracker.get_peers_udp tracker tr peer_id in
   print_endline @@ Sexp.to_string @@ List.sexp_of_t Peer.sexp_of_t peers;
 
-  let info_hash = Bytes.of_string @@ Torrent.get_info_hash tr in
   (*Once we get the list of handshaked peers, we have to establish the *)
   let client = Client.new_client () in
-  let* _ =  Client.init_peers client peers info_hash peer_id in
+  let* _ =  Client.init_peers client peers tr peer_id in
 
   Lwt.return ()
   let _ = Lwt_main.run (run ())

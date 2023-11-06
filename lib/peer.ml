@@ -192,12 +192,9 @@ let receive_bitfield (p: [`Connected] t) tf =
   let open Stdlib.Bytes in 
   let no_of_pieces = Torrent.size tf /  Torrent.get_piece_length tf in
   (* How to handle the spare bits? *)
-  let bitfield_bytes_len = no_of_pieces / 8 in
+  let spare_bits = no_of_pieces mod 8 in
+  let bitfield_bytes_len = (no_of_pieces / 8) + (if spare_bits = 0 then 0 else 1)  in
   let buffer = create (5 + bitfield_bytes_len) in
   let fd = Core.Option.value_exn p.fd in
   let* _ = read fd buffer 0 (length buffer) in
-
-
-
-
-
+  Lwt.return @@ Message.to_bytes @@ Message.new_bitfield_from_bytes buffer 
