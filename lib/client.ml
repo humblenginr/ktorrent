@@ -3,8 +3,8 @@ open Core
 let (let*) = Lwt.bind
 
 type t = {
-  mutable bitfield: bytes option
-  ; mutable peers: [`Connected] Peer.t list
+   torrent_file: Torrent.t
+   ;mutable peers: [`Connected] Peer.t list
 }
 
 
@@ -20,11 +20,11 @@ let init_peer client peer tf peer_id =
               match%lwt Utils.compute_promise_with_timeout (Peer.receive_bitfield connected_peer tf) 3. with
               | `Done bitfield -> 
                   begin
-                    print_endline @@ "Received bitfield: " ^ Stdlib.Bytes.to_string bitfield;
-                    client.bitfield <- Some bitfield;
+                    Peer.set_bitfield connected_peer bitfield;
                     client.peers <- connected_peer :: client.peers;
+                    print_endline @@ "Received bitfield: " ^ Stdlib.Bytes.to_string bitfield;
                     print_endline @@ "Initialised peer: " ^ Sexp.to_string @@ Peer.sexp_of_t @@ connected_peer;
-                    Lwt.return ()
+                    Lwt.return @@ Some connected_peer
                   end
               | `Timeout -> failwith "Timed out waiting for bitfield message from the peer" 
              end
@@ -33,22 +33,25 @@ let init_peer client peer tf peer_id =
     | `Timeout -> failwith "Timed out connecting to the peer"
      
   
-let new_client () = { bitfield= None; peers = [] }
-
-let init_peers client peers_list tf peer_id = 
-  List.map ~f:(fun peer -> 
+let init torrent_file peers peer_id  =
+  let c = { peers = []; torrent_file } in
+  let* p = List.map ~f:(fun peer -> 
     (*try syntax is used to make sure that the inability to initialize to a single peer does not reject the whole promise *)
-    try%lwt init_peer client peer tf peer_id with e -> print_endline @@ Exn.to_string e  ^ Sexp.to_string @@ Peer.sexp_of_t peer ; Lwt.return ()
-    ) peers_list |> Lwt.all
+    try%lwt init_peer c peer torrent_file peer_id with e -> print_endline @@ Exn.to_string e  ^ Sexp.to_string @@ Peer.sexp_of_t peer ; Lwt.return None
+      ) peers |> Lwt.all in 
+  let connected_peers = List.filter_map p ~f:(fun x -> x) in
+  c.peers <- connected_peers; Lwt.return c
+  
+  
 
 (* We assume that the client is handshaked here *)
-(* let rec download_piece (peer: [`Connected] Peer.t  ) (_: int) : unit Lwt.t =  *)
-(*   (* here we have to send interested and wait for unchoke message *) *)
-(*   match%lwt Utils.compute_promise_with_timeout (Peer.interested peer) 5. with  *)
-(*   | `Done _ ->  *)
-(*       begin *)
-(*         (* let response_buffer = Stdlib.Bytes.create 1024 in *) *)
-(*         (* let* resp = Peer.request peer piece_index 1024 1024 in *) *)
-(*         Lwt.return () *)
-(*       end *)
-(*   | `Timeout -> failwith "Timed out waiting for unchoke message" *)
+let rec download_piece (peer: [`Connected] Peer.t  ) (_: int) : unit Lwt.t = 
+  (* here we have to send interested and wait for unchoke message *)
+  match%lwt Utils.compute_promise_with_timeout (Peer.interested peer) 5. with 
+  | `Done _ -> 
+      begin
+        (* let response_buffer = Stdlib.Bytes.create 1024 in *)
+        (* let* resp = Peer.request peer piece_index 1024 1024 in *)
+        Lwt.return ()
+      end
+  | `Timeout -> failwith "Timed out waiting for unchoke message"

@@ -5,6 +5,9 @@ val sexp_of_t: [< `Unconnected | `Connected] t -> Core.Sexp.t
 val ip: [< `Unconnected | `Connected] t -> Ipaddr.V4.t
 val port: [< `Unconnected | `Connected] t -> int
 
+val set_bitfield: [`Connected] t -> bytes -> unit
+val get_bitfield: [`Connected] t -> bytes option
+
 (* connect peer attempts to establish a TCP connection with the peer. If successfull, it returns a connected peer, else it raises an exception *)
 val connect: [`Unconnected] t -> ([`Connected] t) Lwt.t
 (* handshkae peer info_hash peer_id attempts to make a handshake and returns if it was successfully able to complete the handshake  *)

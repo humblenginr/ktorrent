@@ -17,6 +17,7 @@ type peer = {
   (* peer_interested: int; *)
 
   mutable fd: Lwt_unix.file_descr option;
+  mutable bitfield: bytes option;
 }
 
 type 'a t = peer constraint 'a = [< `Connected | `Unconnected]
@@ -31,7 +32,11 @@ let make ip port : [`Unconnected] t = {
   (* ;peer_interested = 0 *)
 
   ;fd= None
+  ; bitfield= None
 }
+
+let set_bitfield p bf = p.bitfield <- Some bf
+let get_bitfield p = p.bitfield
 
 module Message : sig
   type t
