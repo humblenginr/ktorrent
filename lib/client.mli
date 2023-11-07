@@ -3,5 +3,6 @@
 type t
 
 val init: Torrent.t -> [`Unconnected] Peer.t list -> bytes -> t Lwt.t  
+val start_download: t -> unit Lwt.t
 
 

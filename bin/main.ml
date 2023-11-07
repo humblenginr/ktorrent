@@ -25,7 +25,7 @@ let run () =
   print_endline @@ Sexp.to_string @@ List.sexp_of_t Peer.sexp_of_t peers;
 
   (*Once we get the list of handshaked peers, we have to establish the *)
-  let* _ =  Client.init tr peers peer_id in
+  let* client =  Client.init tr peers peer_id in
 
   Lwt.return ()
   let _ = Lwt_main.run (run ())

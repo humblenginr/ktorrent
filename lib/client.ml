@@ -24,6 +24,7 @@ let init_peer client peer tf peer_id =
                     client.peers <- connected_peer :: client.peers;
                     print_endline @@ "Received bitfield: " ^ Stdlib.Bytes.to_string bitfield;
                     print_endline @@ "Initialised peer: " ^ Sexp.to_string @@ Peer.sexp_of_t @@ connected_peer;
+                    (* After all this, I want to keep listening on all the messages being received on this file descriptor *)
                     Lwt.return @@ Some connected_peer
                   end
               | `Timeout -> failwith "Timed out waiting for bitfield message from the peer" 
@@ -42,7 +43,6 @@ let init torrent_file peers peer_id  =
   let connected_peers = List.filter_map p ~f:(fun x -> x) in
   c.peers <- connected_peers; Lwt.return c
   
-  
 
 (* We assume that the client is handshaked here *)
 let rec download_piece (peer: [`Connected] Peer.t  ) (_: int) : unit Lwt.t = 
@@ -55,3 +55,5 @@ let rec download_piece (peer: [`Connected] Peer.t  ) (_: int) : unit Lwt.t =
         Lwt.return ()
       end
   | `Timeout -> failwith "Timed out waiting for unchoke message"
+
+
