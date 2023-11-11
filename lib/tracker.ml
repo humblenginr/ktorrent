@@ -127,3 +127,4 @@ let get_peers_udp (t : [`Connected] t) (tr: Torrent.t) (peer_id)  =
   print_endline @@ "Transaction id:" ^ (Int32.to_string @@ get_int32_be announce_response 4); 
   let peers = List.rev @@ peers_from_response (Bytes.to_string peer_id) (sub announce_response 20 (length announce_response - 20)) in
   Lwt.return peers
+

@@ -8,7 +8,7 @@ let print_peer peer = print_endline ( Sexp.to_string @@ Peer.sexp_of_t peer)
 let print_peer_list l = 
   List.iter l ~f:(print_peer)
 
-let transaction_id = Option.value_exn @@ Int32.of_int 78834
+let transaction_id = Option.value_exn @@ Int32.of_int 78833
 let run () =
   let tr = Torrent.parse_file "tr2.torrent" in
   print_endline @@ Torrent.get_announce_url tr ;
@@ -26,7 +26,8 @@ let run () =
 
   (*Once we get the list of handshaked peers, we have to establish the *)
   let* client =  Client.init tr peers peer_id in
-
+  let* () = Client.start_download client in
   Lwt.return ()
+
   let _ = Lwt_main.run (run ())
 

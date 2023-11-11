@@ -63,7 +63,7 @@
         
     let to_bytes = function 
       | Choke -> Stdlib.Bytes.create 5
-      | Unchoke -> Stdlib.Bytes.create 5
+      | Unchoke -> message_bytes (Unchoke)
       | Interested -> message_bytes (Interested) 
       | NotInterested -> Stdlib.Bytes.create 5
       | Have _ -> Stdlib.Bytes.create 5
@@ -78,3 +78,8 @@
       let bitfield_bytes_len = length - 1 in
       let bf = Bitfield Stdlib.Bytes.(sub buf 5 bitfield_bytes_len) in
       if id = get_message_id bf then bf else failwith "Given is not a bitfield message"
+
+    let new_unchoke_from_bytes buf = 
+      let id = Stdint.Int8.to_int @@ Stdint.Int8.of_bytes_big_endian buf 4 in
+      let msg = Unchoke in
+      if id = get_message_id msg then msg else failwith "Given is not an unchoke message"

@@ -23,3 +23,7 @@ val size: t -> int
 val pretty_print: t -> string
 
 val get_piece_length: t -> int
+
+val get_file_name: t -> string
+
+val no_of_pieces: t -> int

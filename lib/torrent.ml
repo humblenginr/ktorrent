@@ -18,6 +18,10 @@ let get_piece_length t =
   let info = Option.value_exn (Bencode.dict_get t "info") in 
    Option.value_exn @@ Bencode.dict_get info "piece length" |> Bencode.as_int |> Option.value_exn |> Int64.to_int_exn
 
+let get_file_name t = 
+  let info = Option.value_exn (Bencode.dict_get t "info") in 
+   Option.value_exn @@ Bencode.dict_get info "name" |> Bencode.as_string |> Option.value_exn
+
 let size t = 
   let info = Option.value_exn (Bencode.dict_get t "info") in 
   match Bencode.dict_get info "files" with
@@ -26,6 +30,7 @@ let size t =
     let file_list = Option.value_exn (Bencode.as_list files) in 
     List.fold file_list ~init:0 ~f:(fun acc file  -> acc + ( Option.value_exn @@ Bencode.dict_get file "length" |> Bencode.as_int |> Option.value_exn |> Int64.to_int |> Option.value_exn ))
   
+let no_of_pieces tf = size tf /  get_piece_length tf
 
   
 
