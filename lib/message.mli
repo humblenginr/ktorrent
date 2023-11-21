@@ -5,4 +5,7 @@
 
   val new_bitfield_from_bytes: bytes -> t
   val new_unchoke_from_bytes: bytes -> t
+  val new_piece_message_from_bytes: bytes ->t  
+
+  val get_piece_data: t -> bytes
 

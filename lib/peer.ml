@@ -107,39 +107,37 @@ let complete_handshake (p: [`Connected] t) torrent_file peer_id =
   if verify_handshake_response buffer then Lwt.return () else failwith "Could not complete handshake"
 
 let receive_bitfield (p: [`Connected] t) tf =  
-  let open Lwt_unix in
-  let open Stdlib.Bytes in 
   let no_of_pieces = Torrent.no_of_pieces tf in
   (* How to handle the spare bits? *)
   let spare_bits = no_of_pieces mod 8 in
   let bitfield_bytes_len = (no_of_pieces / 8) + (if spare_bits = 0 then 0 else 1)  in
-  let buffer = create (5 + bitfield_bytes_len) in
-  print_endline @@ "bitfield len: " ^ Int.to_string @@ length buffer;
   let fd = Core.Option.value_exn p.fd in
-  let* res = recv fd buffer 0 (length buffer) [] in
-  print_endline @@ "received bitfield len: " ^ Int.to_string @@ res;
+  let* buffer = Utils.receive_from_socket fd (5 + bitfield_bytes_len) in
+  print_endline @@ "bitfield buffer size: " ^ (Int.to_string @@ Stdlib.Bytes.length buffer);
   Lwt.return @@ Message.to_bytes @@ Message.new_bitfield_from_bytes buffer 
 
 let receive_unchoke (p: [`Connected] t) =  
-  let open Lwt_unix in
-  let open Stdlib.Bytes in 
-  let buffer = create 5 in
   let fd = Core.Option.value_exn p.fd in
-  let* res = recv fd buffer 0 (length buffer) [] in
-  print_endline @@ "res: " ^ Int.to_string res;
-  print_endline ("Received message with id: " ^ (Stdint.Int8.to_string @@ Stdint.Int8.of_bytes_big_endian buffer 4) ^ " buffer length: " ^ Int.to_string (length buffer) ^ " buffer: " ^ (to_string buffer));
+  let* buffer = Utils.receive_from_socket fd (5) in
   let msg =  Message.to_bytes @@ Message.new_unchoke_from_bytes buffer in
   p.am_choking <- 0;
   Lwt.return msg
 
-let request_block p piece_index begin_offset = 
+let receive_piece_block (p: [`Connected] t) =  
+  let fd = Core.Option.value_exn p.fd in
+  (* Piece message - 16000 block size, 9 -> id(1) type (4) offset(4), 4 - message_length*)
+  let* buffer = Utils.receive_from_socket fd (16013) in
+  (* just for verification that the message is piece message we are using this function *)
+  Lwt.return @@ Message.get_piece_data @@ Message.new_piece_message_from_bytes buffer
+
+let download_block p piece_index begin_offset = 
   let open Lwt_unix in 
   let open Stdlib.Bytes in
-  let buf = make block_size ' ' in
   let fd = Core.Option.value_exn p.fd in
   let request_msg = Message.new_request_msg piece_index begin_offset block_size |> Message.to_bytes in
   (*TOOD: Return value of send is the actual number of bytes sent. Therefore we need to make sure that the return value is equal to the length of the reqeuest message. *)
   let* _ = send fd request_msg 0 (length request_msg) [] in
-  let* _ = recv fd buf 0 (length buf) [] in
-  Lwt.return (trim buf)
+  let* block = receive_piece_block p in
+  print_endline @@ "downloaded block with index: " ^ (Int.to_string @@ begin_offset / 16000) ^ " of piece with index: " ^ (Int.to_string piece_index) ;
+  Lwt.return (block)
 

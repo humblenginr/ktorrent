@@ -7,9 +7,9 @@
 (source
  (github username/reponame))
 
-(authors "Author Name")
+(authors "Nithish Karthik")
 
-(maintainers "Maintainer Name")
+(maintainers "Nithish Karthik")
 
 (license LICENSE)
 

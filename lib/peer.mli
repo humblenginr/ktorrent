@@ -22,12 +22,12 @@ val receive_bitfield: [`Connected] t -> Torrent.t -> bytes Lwt.t
 (* along with receiving the unchoke message, it also updates the state of the peer *)
 val receive_unchoke: [`Connected] t  -> bytes Lwt.t
 
-(* request the peer for a particular block of a piece. *)
+(* download block of a piece from a peer *)
 (*
- request_block peer piece_index begin_offset - We can only request 16 KB of a piece at a time. The caller has to keep 
+ download_block peer piece_index begin_offset - We can only request 16 KB of a piece at a time. The caller has to keep 
  track of the offset and call accordingly multiple times to get the full piece
  *)
-val request_block: [`Connected] t  -> int -> int -> bytes Lwt.t
+val download_block: [`Connected] t  -> int -> int -> bytes Lwt.t
 
 (* send interested message to the peer, and wait for it to send `unchoked` message *)
 (* This should also update the state of the peer *)

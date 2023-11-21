@@ -6,7 +6,11 @@ type t = Bencode.t
 let parse_file file = Bencode.decode (`File_path file)
 
 let get_announce_url t = 
-Option.value_exn (Bencode.dict_get t "announce") |> Bencode.as_string |> Option.value_exn 
+  let url_string = Option.value_exn (Bencode.dict_get t "announce") |> Bencode.as_string |> Option.value_exn in
+  let uri = Uri.of_string url_string in
+  match (Uri.host uri, Uri.port uri) with 
+  | Some h, Some p -> Some (h, p) 
+  | _ -> None
 
 let pretty_print = Bencode.pretty_print
 

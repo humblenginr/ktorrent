@@ -2,8 +2,8 @@
 opam-version: "2.0"
 synopsis: "A short synopsis"
 description: "A longer description"
-maintainer: ["Maintainer Name"]
-authors: ["Author Name"]
+maintainer: ["Nithish Karthik"]
+authors: ["Nithish Karthik"]
 license: "LICENSE"
 tags: ["topics" "to describe" "your" "project"]
 homepage: "https://github.com/username/reponame"

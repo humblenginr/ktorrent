@@ -11,12 +11,8 @@ let print_peer_list l =
 let transaction_id = Option.value_exn @@ Int32.of_int 78833
 let run () =
   let tr = Torrent.parse_file "tr2.torrent" in
-  print_endline @@ Torrent.get_announce_url tr ;
-  (*TODO: Refactor this to extract the host from announce url*)
-  (* let* server_addr = Utils.get_inet_addr ("tracker.openbittorrent.com") 80 in  *)
-  let* server_addr = Utils.get_inet_addr ("tracker.opentrackr.org") 1337 in 
-
-  print_endline @@ Torrent.pretty_print tr;
+  let (host, port) = Torrent.get_announce_url tr |> Option.value_exn in
+  let* server_addr = Utils.get_inet_addr host port in 
 
   let peer_id = Utils.gen_peer_id () in
   let tracker = Tracker.make (transaction_id) server_addr in
