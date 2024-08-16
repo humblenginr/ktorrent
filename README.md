@@ -1,4 +1,4 @@
-Xtorrent is a BitTorrent client built using Ocaml. I am building this for learning purposes and not intended to be an alternative to 
+Ktorrent is a BitTorrent client built using Ocaml. I am building this for learning purposes and not intended to be an alternative to 
 existing BitTorrent clients.
 
 
