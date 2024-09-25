@@ -7,7 +7,6 @@ Ktorrent is a simple BitTorrent client built using OCaml. It is primarily a lear
 Clone the repository:
 
 ```bash
-Copy code
 git clone https://github.com/humblenginr/ktorrent.git
 cd ktorrent
 ```
@@ -15,14 +14,12 @@ cd ktorrent
 Build the project using dune:
 
 ```bash
-Copy code
 dune build
 ```
 
 Run the BitTorrent client:
 
 ```bash
-Copy code
 dune exec ./bin/ktorrent
 ```
 
