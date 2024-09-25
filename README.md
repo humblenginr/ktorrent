@@ -1,13 +1,37 @@
-Ktorrent is a BitTorrent client built using Ocaml. I am building this for learning purposes and not intended to be an alternative to 
-existing BitTorrent clients.
+# Ktorrent
 
+Ktorrent is a simple BitTorrent client built using OCaml. It is primarily a learning project and is not intended to serve as an alternative to other existing BitTorrent clients.
 
+## Running the project
+
+Clone the repository:
+
+```bash
+Copy code
+git clone https://github.com/humblenginr/ktorrent.git
+cd ktorrent
+```
+
+Build the project using dune:
+
+```bash
+Copy code
+dune build
+```
+
+Run the BitTorrent client:
+
+```bash
+Copy code
+dune exec ./bin/ktorrent
+```
+
+## Demo
 
 https://github.com/humblenginr/xtorrent/assets/75248557/29614c5a-abf5-4553-be8c-5eb4049816c4
 
+## Learning
 
-
-Resources I am using for building this client:
 1. https://wiki.theory.org/BitTorrentSpecification
 2. http://www.kristenwidman.com/blog/33/how-to-write-a-bittorrent-client-part-1/
 3. http://www.kristenwidman.com/blog/71/how-to-write-a-bittorrent-client-part-2/
